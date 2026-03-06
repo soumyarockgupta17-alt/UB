@@ -985,9 +985,9 @@ elif page == "🔮 Predict a Customer":
                 bgcolor=CARD_BG,
                 bordercolor="#2E3248",
                 steps=[
-                    dict(range=[0,30], color="#FF6B6B22"),
-                    dict(range=[30,60], color="#FFD16622"),
-                    dict(range=[60,100], color="#00D4AA22"),
+                    dict(range=[0,30], color=rgba(RED, 0.13)),
+                    dict(range=[30,60], color=rgba(YELLOW, 0.13)),
+                    dict(range=[60,100], color=rgba(GREEN, 0.13)),
                 ],
                 threshold=dict(line=dict(color=GREEN, width=3), thickness=0.85, value=50),
             )
