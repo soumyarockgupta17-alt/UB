@@ -38,17 +38,21 @@ TEXT     = "#E8EAF0"
 SUBTEXT  = "#9499B0"
 PALETTE  = [ACCENT, GREEN, RED, YELLOW, BLUE, "#FF9F43", "#A29BFE", "#FD79A8"]
 
-PLOTLY_TEMPLATE = dict(
-    layout=go.Layout(
-        paper_bgcolor=DARK_BG,
-        plot_bgcolor=CARD_BG,
-        font=dict(color=TEXT, family="IBM Plex Mono, monospace"),
-        xaxis=dict(gridcolor="#2E3248", zerolinecolor="#2E3248"),
-        yaxis=dict(gridcolor="#2E3248", zerolinecolor="#2E3248"),
-        colorway=PALETTE,
-        legend=dict(bgcolor=CARD_BG, bordercolor="#2E3248"),
-        margin=dict(t=50, b=40, l=50, r=20),
-    )
+def rgba(hex_color, alpha=0.25):
+    """Convert #RRGGBB to rgba(r,g,b,alpha) for Plotly fillcolor."""
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
+
+PLOTLY_LAYOUT = dict(
+    paper_bgcolor=DARK_BG,
+    plot_bgcolor=CARD_BG,
+    font=dict(color=TEXT, family="IBM Plex Mono, monospace"),
+    xaxis=dict(gridcolor="#2E3248", zerolinecolor="#2E3248"),
+    yaxis=dict(gridcolor="#2E3248", zerolinecolor="#2E3248"),
+    colorway=PALETTE,
+    legend=dict(bgcolor=CARD_BG, bordercolor="#2E3248"),
+    margin=dict(t=50, b=40, l=50, r=20),
 )
 
 # ── Custom CSS ─────────────────────────────────────────────────────────────────
@@ -532,7 +536,7 @@ if page == "📊 Overview & EDA":
             textinfo="label+percent",
             textfont=dict(color=TEXT, size=12),
         ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="Personal Loan Distribution",
                           annotations=[dict(text=f"<b>{counts[1]}</b><br>accepted", x=0.5, y=0.5,
                                             font=dict(size=16, color=TEXT), showarrow=False)])
@@ -547,7 +551,7 @@ if page == "📊 Overview & EDA":
                 marker_color=color, opacity=0.75, nbinsx=35,
                 marker_line=dict(width=0),
             ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="Income Distribution by Loan Status",
                           xaxis_title="Annual Income ($000)",
                           barmode="overlay", bargap=0.05)
@@ -562,7 +566,7 @@ if page == "📊 Overview & EDA":
         fig = px.bar(edu_rate, x="Education", y=target,
                      color="Education", color_discrete_sequence=PALETTE,
                      text=edu_rate[target].apply(lambda v: f"{v*100:.1f}%"))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="Acceptance Rate by Education",
                           yaxis_title="Acceptance Rate", showlegend=False)
         fig.update_traces(textposition="outside", marker_line_width=0)
@@ -574,7 +578,7 @@ if page == "📊 Overview & EDA":
         fig = px.bar(fam_rate, x="Family", y=target,
                      color=target, color_continuous_scale=[[0, CARD_BG],[1, YELLOW]],
                      text=fam_rate[target].apply(lambda v: f"{v*100:.1f}%"))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="Acceptance by Family Size",
                           xaxis_title="Family Size", yaxis_title="Acceptance Rate",
                           showlegend=False, coloraxis_showscale=False)
@@ -588,9 +592,9 @@ if page == "📊 Overview & EDA":
             fig.add_trace(go.Box(
                 y=df[df[target]==val]["CCAvg"], name=label,
                 marker_color=color, line_color=color,
-                fillcolor=color+"44", boxmean=True,
+                fillcolor=rgba(color, 0.27), boxmean=True,
             ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="CC Spending vs Loan",
                           yaxis_title="CCAvg ($000/month)")
         st.plotly_chart(fig, use_container_width=True)
@@ -605,7 +609,7 @@ if page == "📊 Overview & EDA":
         texttemplate="%{text}", textfont=dict(size=10, color=TEXT),
         hoverongaps=False,
     ))
-    fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+    fig.update_layout(**PLOTLY_LAYOUT,
                       title="Correlation Matrix – All Features",
                       height=500)
     st.plotly_chart(fig, use_container_width=True)
@@ -631,7 +635,7 @@ elif page == "🤖 Model Performance":
         vals = [results[n][metric] for n in model_names]
         fig.add_trace(go.Bar(name=label, x=short_names, y=vals, marker_color=color,
                               marker_line_width=0, opacity=0.87))
-    fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+    fig.update_layout(**PLOTLY_LAYOUT,
                       barmode="group", title="All Metrics by Model",
                       yaxis=dict(range=[0.4, 1.02], gridcolor="#2E3248"),
                       height=420, legend=dict(orientation="h", y=1.12))
@@ -649,7 +653,7 @@ elif page == "🤖 Model Performance":
                          labels=dict(x="Predicted", y="Actual"),
                          x=["No Loan","Loan"], y=["No Loan","Loan"])
         fig.update_traces(textfont=dict(size=20, color=TEXT))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title=f"Confusion Matrix – {sel_model}",
                           coloraxis_showscale=False, height=350)
         st.plotly_chart(fig, use_container_width=True)
@@ -732,7 +736,7 @@ elif page == "📈 ROC & Thresholds":
                 name=f"{SHORT[name]} ({auc:.3f})",
                 line=dict(color=PALETTE[i], width=2.5),
             ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="ROC – All Models",
                           xaxis_title="False Positive Rate",
                           yaxis_title="True Positive Rate",
@@ -757,7 +761,7 @@ elif page == "📈 ROC & Thresholds":
             text=[f"{v:.3f}±{s:.3f}" for v,s in zip(cv_aucs, cv_stds)],
             textposition="outside", textfont=dict(color=TEXT, size=10),
         ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="5-Fold CV ROC-AUC ± Std",
                           xaxis=dict(range=[0.75, 1.05], gridcolor="#2E3248"),
                           height=430)
@@ -812,7 +816,7 @@ elif page == "📈 ROC & Thresholds":
                               name="F1", line=dict(color=YELLOW, width=2)))
     fig.add_vline(x=threshold, line=dict(color=RED, dash="dash", width=1.5),
                   annotation_text=f"t={threshold}", annotation_font_color=RED)
-    fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+    fig.update_layout(**PLOTLY_LAYOUT,
                       title=f"Precision / Recall / F1 vs Threshold — {thresh_model}",
                       xaxis_title="Threshold", yaxis_title="Score", height=380)
     st.plotly_chart(fig, use_container_width=True)
@@ -840,7 +844,7 @@ elif page == "🔍 Feature Analysis":
             text=[f"{v:.4f}" for v in fi.values],
             textposition="outside", textfont=dict(color=TEXT, size=10),
         ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="Feature Importance (Random Forest)",
                           xaxis_title="Importance", height=420)
         st.plotly_chart(fig, use_container_width=True)
@@ -853,7 +857,7 @@ elif page == "🔍 Feature Analysis":
                          opacity=0.6, size_max=5,
                          labels={"Income":"Income ($000)", "CCAvg":"CC Avg ($000/mo)",
                                  target: "Loan"})
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title="Income vs CC Spending (colored by loan)", height=420)
         fig.update_traces(marker=dict(size=4))
         st.plotly_chart(fig, use_container_width=True)
@@ -870,7 +874,7 @@ elif page == "🔍 Feature Analysis":
                 x=df[df[target]==val][feat_sel], name=label,
                 marker_color=color, opacity=0.75, nbinsx=30, marker_line_width=0,
             ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           barmode="overlay", title=f"{feat_sel} Distribution",
                           xaxis_title=feat_sel, height=340)
         st.plotly_chart(fig, use_container_width=True)
@@ -883,10 +887,10 @@ elif page == "🔍 Feature Analysis":
             sub = df[df[target]==val][feat_sel]
             fig.add_trace(go.Violin(
                 y=sub, name=label, marker_color=color,
-                line_color=color, fillcolor=color+"44",
+                line_color=color, fillcolor=rgba(color, 0.27),
                 box_visible=True, meanline_visible=True,
             ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           title=f"{feat_sel} Violin Plot",
                           yaxis_title=feat_sel, height=340)
         st.plotly_chart(fig, use_container_width=True)
@@ -978,7 +982,7 @@ elif page == "🔮 Predict a Customer":
                 threshold=dict(line=dict(color=GREEN, width=3), thickness=0.85, value=50),
             )
         ))
-        fig.update_layout(**PLOTLY_TEMPLATE["layout"].to_plotly_json(),
+        fig.update_layout(**PLOTLY_LAYOUT,
                           height=320, paper_bgcolor=DARK_BG)
         st.plotly_chart(fig, use_container_width=True)
 
